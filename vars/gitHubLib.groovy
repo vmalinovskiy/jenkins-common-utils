@@ -15,10 +15,10 @@ def preparePullRequest(script, repositoryName, from, to, message, reviewerNames 
 }
 
 def getPullRequestParamValue(script, repositoryName, pullRequestNumber, paramName) {
-    script.echo "Get ${repositoryName} ${pullRequestNumber} pull request to get property value..."
+    script.echo "Get ${repositoryName} pull request (number ${pullRequestNumber}) to get property value..."
     def repository = gitHubClient(script).getRepository(getRepoSlug(script, repositoryName))
     def pr = repository.getPullRequest(pullRequestNumber)
-    script.echo "Get ${repositoryName} ${pullRequestNumber} pull request to get property value successful..."
+    script.echo "Get ${repositoryName} pull request (number ${pullRequestNumber})to get property value successful..."
     return pr."${paramName}"
 }
 
@@ -82,14 +82,14 @@ def updateFileData(script, repositoryName, branchName, fileName, replaceTo, sear
 }
 
 def createFile(script, repositoryName, content, branch, path, message) {
-    script.echo "Creating file ${path} on ${repositoryName} repo, ${branchName}..."
+    script.echo "Creating file ${path} on ${repositoryName} repo, ${branch}..."
     gitHubClient(script).getRepository(getRepoSlug(script, repositoryName)).createContent()
             .content(content)
             .branch(branch)
             .path(path)
             .message(message)
             .commit()
-    script.echo "File ${path} was created on ${repositoryName} repo, ${branchName}..."
+    script.echo "File ${path} was created on ${repositoryName} repo, ${branch}..."
 }
 
 def dirSubItemPresent(script, repositoryName, path, branchName, subItemName = null) {
