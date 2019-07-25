@@ -1,4 +1,4 @@
-package lib
+package main.groovy.lib
 
 import org.kohsuke.github.*
 

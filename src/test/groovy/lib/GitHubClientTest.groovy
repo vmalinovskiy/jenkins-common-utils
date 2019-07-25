@@ -1,4 +1,4 @@
-package lib
+package main.groovy.lib
 
 import org.kohsuke.github.*
 import spock.lang.Specification
@@ -38,7 +38,7 @@ class GitHubClientTest extends Specification {
     def setup(){
         GroovyMock(GitHub.class, global: true)
         GitHub.connectUsingOAuth(_) >> client
-        gitHubClient = new lib.GitHubClient(new TestPipelineScript(), 'gitHubPermissionTest')
+        gitHubClient = new GitHubClient(new TestPipelineScript(), 'gitHubPermissionTest')
 
         client.getRepository("testRepoOwner/test") >> repository
         repository.name >> testName

@@ -1,4 +1,4 @@
-package lib
+package main.groovy.lib
 
 import groovy.json.JsonOutput
 import org.apache.http.client.methods.HttpPost

@@ -1,4 +1,4 @@
-package lib
+package main.groovy.lib
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.HttpStatus
