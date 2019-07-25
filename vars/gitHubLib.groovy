@@ -1,4 +1,4 @@
-import lib.GitHubClient
+import main.groovy.lib.GitHubClient
 
 def preparePullRequest(script, repositoryName, from, to, message, reviewerNames = null) {
     return gitHubClient(script).createPullRequest(repositoryName, from, to, message, reviewerNames)
