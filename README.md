@@ -1,1 +1,1 @@
-Lib for interaction with github api/slack from jenkins pipeline job
+Lib for interaction with github/slack from jenkins pipeline job
