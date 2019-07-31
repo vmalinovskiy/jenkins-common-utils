@@ -1,13 +1,6 @@
 package main.groovy.lib
 
-import groovy.json.JsonOutput
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
-
-import static org.apache.http.HttpStatus.SC_OK
-import static org.apache.http.util.EntityUtils.toString
+import com.callfire.watson.common.util.SlackClient
 
 class SlackNotifier implements Serializable {
 
@@ -23,23 +16,15 @@ class SlackNotifier implements Serializable {
     }
 
     /**
-     * Send slack message to some channel specified by webhook url attached to that channel
+     * Send slack message to some channel
      *
-     * @param webhookUrl Slack channel webhook url
+     * @param channelName Slack channel name
      * @param text Text of message to send
+     * @param isError Flag if this is error message or not (if error message would be sent in RED colour)
      */
-    def sendSlackNotification(webhookUrl, text) {
-        CloseableHttpClient httpClient = HttpClients.createDefault()
-        try {
-            HttpPost httpPost = new HttpPost(webhookUrl)
-            httpPost.setEntity(new StringEntity(JsonOutput.toJson(["text": "${text}"])))
-            def response = httpClient.execute(httpPost)
-            if (response.getStatusLine().getStatusCode() != SC_OK) {
-                String error = toString(response.getEntity(), "UTF-8")
-                script.echo("\nERROR. Sending message to groovy-release slack channel failed\n    HTTP Status: ${response.getStatusLine().getStatusCode()} \n    Message: ${error}")
-            }
-        } finally {
-            httpClient.close()
+    def sendSlackNotification(channelName, text, isError) {
+        if (!SlackClient.send(channelName, text, isError ? SlackClient.MessageColor.RED : SlackClient.MessageColor.GREEN).join()) {
+            script.echo("\nERROR. Sending message to ${channelName} slack channel failed")
         }
     }
 }

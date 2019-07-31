@@ -1,5 +1,5 @@
 import main.groovy.lib.SlackNotifier
 
-def sendSlackNotification(script, webhookUrl, text) {
-    new SlackNotifier(script).sendSlackNotification(webhookUrl, text)
+def sendSlackNotification(script, channelName, text, isError) {
+    new SlackNotifier(script).sendSlackNotification(channelName, text, isError)
 }
