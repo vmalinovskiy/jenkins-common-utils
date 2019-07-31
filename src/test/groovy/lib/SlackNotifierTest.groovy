@@ -1,65 +1,41 @@
 package main.groovy.lib
 
-import org.apache.commons.io.IOUtils
-import org.apache.http.HttpStatus
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.client.methods.HttpUriRequest
-import org.apache.http.entity.BasicHttpEntity
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicStatusLine
+import com.callfire.watson.common.util.SlackClient
+import main.groovy.lib.TestPipelineScript
 import spock.lang.Specification
 
-import java.nio.charset.Charset
+import java.util.concurrent.CompletableFuture
+
+import static com.callfire.watson.common.util.SlackClient.MessageColor.GREEN
+import static com.callfire.watson.common.util.SlackClient.MessageColor.RED
 
 class SlackNotifierTest extends Specification {
 
     SlackNotifier slackNotifier = new SlackNotifier(new TestPipelineScript())
 
-    def webhookUrl = "https://hooks.slack.com/services/test"
+    def channelName = "testChannel"
     def text = "testText"
 
-    BasicStatusLine statusLine = Mock()
-    CloseableHttpResponse httpResponse = Mock()
-    CloseableHttpClient httpClient = Mock()
-    BasicHttpEntity entity = Mock()
+    CompletableFuture<Boolean> completableFuture = Mock()
 
     def setup(){
-        httpResponse.getStatusLine() >> statusLine
-        GroovyMock(HttpClients, global: true)
-        HttpClients.createDefault() >> httpClient
+        GroovyMock(SlackClient, global: true)
+        completableFuture.join() >> true
     }
 
-    /*def "testSendSlackNotificationError"() {
-        given:
-        statusLine.getStatusCode() >> HttpStatus.SC_INTERNAL_SERVER_ERROR
-        httpResponse.getEntity() >> entity
-        entity.getContent() >> IOUtils.toInputStream("error", Charset.defaultCharset())
+    def "testSendSlackNotification"() {
         when:
-        def statCodeResult = statusLine.getStatusCode()
-        def statusLineResult = httpResponse.getStatusLine()
-        def httpEntityResult = httpResponse.getEntity()
+        slackNotifier.sendSlackNotification(channelName, text, false)
 
-        slackNotifier.sendSlackNotification(webhookUrl, text)
         then:
-        statCodeResult == HttpStatus.SC_INTERNAL_SERVER_ERROR
-        statusLineResult == statusLine
-        httpEntityResult.content != null
-        1 * httpClient.execute(_ as HttpUriRequest) >> httpResponse
-    }*/
+        1 * SlackClient.send(channelName, text, GREEN) >> completableFuture
+    }
 
-    def "testSendSlackNotificationSuccess"() {
-        given:
-        statusLine.getStatusCode() >> HttpStatus.SC_OK
+    def "testSendSlackNotificationForError"() {
         when:
-        def statCodeResult = statusLine.getStatusCode()
-        def statusLineResult = httpResponse.getStatusLine()
+        slackNotifier.sendSlackNotification(channelName, text, true)
 
-        slackNotifier.sendSlackNotification(webhookUrl, text)
         then:
-        statCodeResult == HttpStatus.SC_OK
-        statusLineResult == statusLine
-        1 * httpClient.execute(_ as HttpUriRequest) >> httpResponse
-        0 * httpResponse.getEntity()
+        1 * SlackClient.send(channelName, text, RED) >> completableFuture
     }
 }

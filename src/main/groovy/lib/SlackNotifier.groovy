@@ -1,5 +1,6 @@
 package main.groovy.lib
 
+@Grab('com.callfire.watson.common:watson-common-util:3.9.198')
 import com.callfire.watson.common.util.SlackClient
 
 class SlackNotifier implements Serializable {
