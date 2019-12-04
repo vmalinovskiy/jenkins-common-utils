@@ -1,4 +1,4 @@
-package main.groovy.lib
+package com.callfire.pipeline
 
 class TestPipelineScript {
 

@@ -1,11 +1,11 @@
-package main.groovy.lib
+package pipeline.github
 
 import org.kohsuke.github.*
 
 class GitHubClient implements Serializable {
 
     def script
-    private GitHub client
+    def token
 
     /**
      * Instantiate git hub client
@@ -15,7 +15,7 @@ class GitHubClient implements Serializable {
      */
     GitHubClient(script, token) {
         this.script = script
-        this.client = GitHub.connectUsingOAuth(token)
+        this.token = token
     }
 
     /**
@@ -30,7 +30,7 @@ class GitHubClient implements Serializable {
      * @return Pull request number
      */
     def createPullRequest(repositoryName, branchFrom, branchTo, message, reviewerNames = null) {
-        def repository = client.getRepository(getRepoSlug(repositoryName))
+        def repository = client().getRepository(getRepoSlug(repositoryName))
         def pullRequest = repository.createPullRequest(message, branchFrom, branchTo, message)
         script.echo "Created ${repository.name} pull request from ${branchFrom} to ${branchTo}, number - ${pullRequest.number}"
 
@@ -53,9 +53,9 @@ class GitHubClient implements Serializable {
      */
     def getPullRequestParamValue(repositoryName, pullRequestNumber, paramName) {
         script.echo "Get ${repositoryName} pull request (number ${pullRequestNumber}) to get property value..."
-        def repository = client.getRepository(getRepoSlug(repositoryName))
+        def repository = client().getRepository(getRepoSlug(repositoryName))
         def pr = repository.getPullRequest(pullRequestNumber)
-        script.echo "Get ${repositoryName} pull request (number ${pullRequestNumber})to get property value successful..."
+        script.echo "Get ${repositoryName} pull request (number ${pullRequestNumber}) to get property value successful..."
         return pr."${paramName}"
     }
 
@@ -65,23 +65,30 @@ class GitHubClient implements Serializable {
      * @param repositoryName Repository name to merge pr on
      * @param pullRequestNumber Pull request number (not id)
      * @param message Message to merge with
+     * @param timeout timeout in seconds how long we'll wait for ability to merge (default is 30min)
+     *
+     * @return true if merged, false if timeout was exceeded
      */
-    def mergePullRequest(repositoryName, pullRequestNumber, message) {
-        def repository = client.getRepository(getRepoSlug(repositoryName))
-        boolean pullRequestMergeable = false
-        while (!pullRequestMergeable) {
-            def pr = repository.getPullRequest(pullRequestNumber)
-            script.echo "${repository.name} pull request mergeable status is ${pr?.getMergeable()}"
+    def mergePullRequest(repositoryName, pullRequestNumber, message, timeout = 1800) {
+        while (timeout > 0) {
+            script.echo "Waiting for a minute before next ${repositoryName} pull request status check, remaining time for merge - ${timeout}..."
+            script.sleep 60 //1 minute
+            def pr = client().getRepository(getRepoSlug(repositoryName)).getPullRequest(pullRequestNumber)
+            script.echo "${repositoryName} pull request mergeable status is ${pr?.getMergeable()}"
 
-            if (pr?.getMergeableState() == "clean") {
+            if (pr?.isMerged()) {
+                script.echo "${repositoryName} pull request was merged manually by ${pr?.getMergedBy()?.getLogin()}"
+                return true
+            } else if (pr?.getMergeableState() == "clean") {
                 pr.merge(message, pr.getHead().getSha())
-                script.echo "${repository.name} pull request merged successfully"
-                pullRequestMergeable = true
+                script.echo "${repositoryName} pull request merged successfully"
+                return true
             } else if (!pr?.getMergeable() || pr?.getMergeableState() == "blocked") {
-                script.echo "${repository.name} pull request is waiting for reviews and additional check build finish..."
-                script.sleep 60 //1 minute
+                script.echo "${repositoryName} pull request is waiting for reviews and additional build check finish..."
             }
+            timeout -= 60
         }
+        return false
     }
 
     /**
@@ -91,7 +98,7 @@ class GitHubClient implements Serializable {
      * @param version Tag version name (string)
      */
     def createRelease(repositoryName, version) {
-        def repository = client.getRepository(getRepoSlug(repositoryName))
+        def repository = client().getRepository(getRepoSlug(repositoryName))
         script.echo "Creating ${repository.name} release tag after pull request merging into master..."
         GHRelease release = repository.createRelease(version)
                 .name(version)
@@ -110,7 +117,7 @@ class GitHubClient implements Serializable {
      */
     def createBranch(repositoryName, baseBranchSha, newBranchName) {
         script.echo "Creating ${repositoryName} branch based on SHA ${baseBranchSha}..."
-        GHRef newBranch = client.getRepository(getRepoSlug(repositoryName)).createRef(newBranchName, baseBranchSha)
+        GHRef newBranch = client().getRepository(getRepoSlug(repositoryName)).createRef(newBranchName, baseBranchSha)
         script.echo "New ${repositoryName} branch created\n${newBranch?.getObject()?.getUrl()}"
     }
 
@@ -124,7 +131,7 @@ class GitHubClient implements Serializable {
      */
     def getBranchSha(repositoryName, branchName) {
         script.echo "Get ${repositoryName} ${branchName} branch to get sha..."
-        def branchSha = client.getRepository(getRepoSlug(repositoryName)).getRef(branchName)
+        def branchSha = client().getRepository(getRepoSlug(repositoryName)).getRef(branchName)
         script.echo "${repositoryName} ${branchName} branch sha: ${branchSha?.getObject()?.getSha()}"
         return branchSha?.getObject()?.getSha()
     }
@@ -139,17 +146,14 @@ class GitHubClient implements Serializable {
      * @param searchCriteria Regex/string file part to change to (if null we replace file content fully)
      */
     def updateFileData(repositoryName, branchName, fileName, replaceTo, searchCriteria = null) {
-        def repository = client.getRepository(getRepoSlug(repositoryName))
+        def repository = client().getRepository(getRepoSlug(repositoryName))
         script.echo "Getting ${fileName} file from ${repository.name} project to update..."
         GHContent fileData = repository.getFileContent(fileName, branchName)
         script.echo "${fileName} file data from ${repository.name} project successfully loaded..."
         def replacedFileData
         def replaceResult = new String(fileData.getContent())
-        if (searchCriteria == null) {
-            replacedFileData = replaceResult.replace(new String(fileData.getContent()), replaceTo)
-        } else {
-            replacedFileData = replaceResult.replaceAll(searchCriteria, replaceTo)
-        }
+        replacedFileData = searchCriteria == null ? replaceResult.replace(new String(fileData.getContent()), replaceTo) :
+                replaceResult.replaceAll(searchCriteria, replaceTo)
         script.echo "Updating ${fileName} file from ${repository.name} project with new content..."
         fileData.update(replacedFileData, "${repository.name}-${fileName} update", branchName)
         script.echo "${fileName} from ${repository.name} project successfully updated with new content..."
@@ -163,7 +167,7 @@ class GitHubClient implements Serializable {
      */
     def createFile(repositoryName, content, branch, path, commitMessage) {
         script.echo "Creating file ${path} on ${repositoryName} repo, ${branch}..."
-        client.getRepository(getRepoSlug(repositoryName)).createContent()
+        client().getRepository(getRepoSlug(repositoryName)).createContent()
                 .content(content)
                 .branch(branch)
                 .path(path)
@@ -183,7 +187,7 @@ class GitHubClient implements Serializable {
      * @return Boolean value if element was found in search directory
      */
     def dirSubItemPresent(repositoryName, path, branchName, subItemName = null) {
-        List<GHContent> contentItem = client.getRepository(getRepoSlug(repositoryName))
+        List<GHContent> contentItem = client().getRepository(getRepoSlug(repositoryName))
                 .getDirectoryContent(path, branchName)
         script.echo "Sub item to search for is ${subItemName}"
         if (subItemName == null) {
@@ -191,18 +195,17 @@ class GitHubClient implements Serializable {
             return contentItem?.size() > 0 ? true : false
         }
 
-        for(it in contentItem) {
-            if (it.getName() == subItemName) {
-                script.echo "${subItemName} was found..."
-                return true
-            }
+        if (contentItem.find{it.getName() == subItemName}) {
+            script.echo "${subItemName} was found..."
+            return true
         }
-        script.echo "${subItemName} was found..."
+
+        script.echo "${subItemName} was not found..."
         return false
     }
 
     /**
-     * Get repository slag api client will work on.
+     * Get repository slug api client will work on.
      *
      * @param projectName Project name
 
@@ -220,12 +223,10 @@ class GitHubClient implements Serializable {
      * @return List of GHUser objects
      */
     private def reviewers(names) {
-        List<GHUser> reviewers = new ArrayList()
-        names.split(',').each {
-            GHUser user = new GHUser()
-            user.login = "${it}"
-            reviewers.add(user)
-        }
-        return reviewers
+        return names.split(',').collect { new GHUser(login:it) }
+    }
+
+    private client() {
+        return GitHub.connectUsingOAuth(token)
     }
 }

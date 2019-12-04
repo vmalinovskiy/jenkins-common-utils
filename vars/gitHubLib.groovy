@@ -1,4 +1,8 @@
-import main.groovy.lib.GitHubClient
+//this is here to be sure we have all required groovy dependecies downloaded during calling lib from pipeline
+@Grab(group='org.kohsuke', module='github-api', version='1.95')
+import org.kohsuke.github.*
+
+import com.callfire.pipeline.github.GitHubClient
 
 def createPullRequest(script, repositoryName, from, to, message, reviewerNames = null) {
     return gitHubClient(script).createPullRequest(repositoryName, from, to, message, reviewerNames)
@@ -8,8 +12,12 @@ def getPullRequestParamValue(script, repositoryName, pullRequestNumber, paramNam
     return gitHubClient(script).getPullRequestParamValue(repositoryName, pullRequestNumber, paramName)
 }
 
-def mergePullRequest(script, repositoryName, pullRequestNumber, message) {
-    gitHubClient(script).mergePullRequest(repositoryName, pullRequestNumber, message)
+def mergePullRequest(script, repositoryName, pullRequestNumber, message, timeout = 1800) {
+    gitHubClient(script).mergePullRequest(repositoryName, pullRequestNumber, message, timeout)
+}
+
+def mergePullRequestWithAdmin(script, repositoryName, pullRequestNumber, message) {
+    adminGitHubClient(script).mergePullRequest(repositoryName, pullRequestNumber, message)
 }
 
 def createRelease(script, repositoryName, version) {
@@ -41,3 +49,10 @@ def gitHubClient(script) {
         return new GitHubClient(script, "${GITHUB_TOKEN}")
     }
 }
+
+def adminGitHubClient(script) {
+    script.withCredentials([[$class: 'StringBinding', credentialsId: "${script.env.gitHubAdminPermissionId}", variable: 'GITHUB_ADMIN_TOKEN']]) {
+        return new GitHubClient(script, "${GITHUB_ADMIN_TOKEN}")
+    }
+}
+

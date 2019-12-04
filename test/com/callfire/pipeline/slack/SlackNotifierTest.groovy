@@ -1,7 +1,7 @@
-package main.groovy.lib
+package com.callfire.pipeline.slack
 
+import com.callfire.pipeline.TestPipelineScript
 import com.callfire.watson.common.util.SlackClient
-import main.groovy.lib.TestPipelineScript
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -21,6 +21,22 @@ class SlackNotifierTest extends Specification {
     def setup(){
         GroovyMock(SlackClient, global: true)
         completableFuture.join() >> true
+    }
+
+    def "testSendSlackNotificationWithName"() {
+        when:
+        slackNotifier.sendSlackNotification(channelName, text, false, "test")
+
+        then:
+        1 * SlackClient.sendFrom(channelName, text, GREEN, "test") >> completableFuture
+    }
+
+    def "testSendSlackNotificationWithNameForError"() {
+        when:
+        slackNotifier.sendSlackNotification(channelName, text, true, "test")
+
+        then:
+        1 * SlackClient.sendFrom(channelName, text, RED, "test") >> completableFuture
     }
 
     def "testSendSlackNotification"() {

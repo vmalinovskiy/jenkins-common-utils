@@ -1,23 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>jenkins-common-utils</name>
-    <groupId>com.callfire.jenkins.jobs</groupId>
-    <artifactId>jenkins-common-utils</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.callfire.jenkins.pipeline</groupId>
+    <artifactId>jenkins-pipeline-lib</artifactId>
+    <name>jenkins-pipeline-lib</name>
+    <version>1.0.1</version>
+    <packaging>jar</packaging>
+    <parent>
+        <groupId>com.callfire.watson.common</groupId>
+        <artifactId>watson-common-parent</artifactId>
+        <version>3.9.386</version>
+    </parent>
+
+    <properties>
+        <watson.version>3.9.386</watson.version>
+    </properties>
+
+    <scm>
+        <url>https://gerrit.kernelfire.com:29418/jenkins-pipeline-lib/</url>
+        <connection>scm:git:ssh://gerrit-cf/jenkins-pipeline-lib/</connection>
+        <developerConnection>scm:git:ssh://gerrit-cf/jenkins-pipeline-lib/</developerConnection>
+        <tag>jenkins-pipeline-lib-1.0.1</tag>
+    </scm>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.gmavenplus</groupId>
-                <artifactId>gmavenplus-plugin</artifactId>
-                <version>1.5</version>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerId>groovy-eclipse-compiler</compilerId>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-eclipse-compiler</artifactId>
+                        <version>2.9.2-01</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-eclipse-batch</artifactId>
+                        <version>2.4.3-01</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.ivy</groupId>
+                        <artifactId>ivy</artifactId>
+                        <version>2.4.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.12</version>
                 <executions>
                     <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
+                            <goal>add-source</goal>
                         </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>test/</source>
+                            </sources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -44,23 +105,16 @@
             <groupId>org.spockframework</groupId>
             <artifactId>spock-core</artifactId>
             <version>1.1-groovy-2.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <version>2.2.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.objenesis</groupId>
-            <artifactId>objenesis</artifactId>
-            <version>1.2</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.callfire.watson.common</groupId>
             <artifactId>watson-common-util</artifactId>
-            <version>3.9.198</version>
+            <version>${watson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ivy</groupId>
+            <artifactId>ivy</artifactId>
+            <version>2.5.0-rc1</version>
         </dependency>
     </dependencies>
 </project>
