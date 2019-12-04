@@ -1,4 +1,4 @@
-package pipeline.github
+package com.callfire.pipeline.github
 
 import org.kohsuke.github.*
 

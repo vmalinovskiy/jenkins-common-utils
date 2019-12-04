@@ -1,4 +1,4 @@
-package pipeline.slack
+package com.callfire.pipeline.slack
 
 import com.callfire.watson.common.util.SlackClient
 
