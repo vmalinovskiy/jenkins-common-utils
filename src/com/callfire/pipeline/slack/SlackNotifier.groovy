@@ -1,6 +1,9 @@
 package com.callfire.pipeline.slack
 
-import com.callfire.watson.common.util.SlackClient
+import static com.callfire.watson.common.util.SlackClient.send;
+import static com.callfire.watson.common.util.SlackClient.sendFrom;
+import static com.callfire.watson.common.util.SlackClient.MessageColor.GREEN;
+import static com.callfire.watson.common.util.SlackClient.MessageColor.RED;
 
 class SlackNotifier implements Serializable {
 
@@ -25,8 +28,8 @@ class SlackNotifier implements Serializable {
      */
     def sendSlackNotification(channelName, text, isError, senderName = null) {
         script.echo("Sending text: ${text} to channel ${channelName}, isError ${isError}, senderName ${senderName}")
-        def isSent = senderName != null ? SlackClient.sendFrom(channelName, text, isError ? SlackClient.MessageColor.RED : SlackClient.MessageColor.GREEN, senderName).join() :
-                SlackClient.send(channelName, text, isError ? SlackClient.MessageColor.RED : SlackClient.MessageColor.GREEN).join()
+        def isSent = senderName != null ? sendFrom(channelName, text, isError ? RED : GREEN, senderName).join() :
+                send(channelName, text, isError ? RED : GREEN).join()
         if (!isSent) script.echo("\nERROR. Sending message to ${channelName} slack channel failed")
     }
 }

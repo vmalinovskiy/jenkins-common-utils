@@ -1,5 +1,5 @@
-//this is here to be sure we have all required groovy dependecies downloaded during calling lib from pipeline
-@Grab(group='com.callfire.watson.common', module='watson-common-util', version='3.9.198')
+//this is here to be sure we have all required groovy dependecies downloaded during calling lib from jenkins pipeline
+@Grab(group='com.callfire.watson.common', module='watson-common-util', version='3.9.386')
 @Grab(group='javax.ws.rs', module='javax.ws.rs-api', version='2.1.1')
 import com.callfire.watson.common.util.SlackClient;
 
